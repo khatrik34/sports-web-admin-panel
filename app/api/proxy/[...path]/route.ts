@@ -1,18 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/session';
+import { getSession, setTokens, clearTokens } from '@/lib/session';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 
 async function handleProxy(req: NextRequest) {
   const session = await getSession();
   
-  // Extract path
   const path = req.nextUrl.pathname.replace(/^\/api\/proxy/, '');
   const searchParams = req.nextUrl.search;
   const targetUrl = `${API_BASE_URL}${path}${searchParams}`;
 
   const headers = new Headers(req.headers);
-  // Remove host to avoid conflicts
   headers.delete('host');
   headers.delete('cookie');
   headers.delete('connection');
@@ -21,30 +19,54 @@ async function handleProxy(req: NextRequest) {
     headers.set('Authorization', `Bearer ${session.accessToken}`);
   }
 
-  // Handle body
-  let body = null;
+  let bodyText: string | null = null;
   if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
-    // If it's application/json we can read it, or just forward as stream?
-    // In Next 15, we can forward req.body
-    if (req.body) {
-      body = req.body;
+    try {
+      bodyText = await req.text();
+    } catch (e) {
+      bodyText = null;
     }
   }
 
-  try {
-    const backendRes = await fetch(targetUrl, {
+  const makeRequest = async (token?: string) => {
+    const reqHeaders = new Headers(headers);
+    if (token) {
+      reqHeaders.set('Authorization', `Bearer ${token}`);
+    }
+    return fetch(targetUrl, {
       method: req.method,
-      headers,
-      body: body,
-      // @ts-expect-error - duplex is needed for streaming body in Node
-      duplex: body ? 'half' : undefined,
+      headers: reqHeaders,
+      body: bodyText || undefined,
     });
+  };
+
+  try {
+    let backendRes = await makeRequest(session?.accessToken);
+
+    if (backendRes.status === 401 && session?.refreshToken) {
+      // Try refresh
+      const refreshRes = await fetch(`${API_BASE_URL}/api/v1/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken: session.refreshToken }),
+      });
+
+      if (refreshRes.ok) {
+        const data = await refreshRes.json();
+        // { accessToken, refreshToken, user... }
+        // The API returns the new tokens. 
+        await setTokens(data.accessToken, data.refreshToken, data.user || session.user);
+        
+        // Retry original request
+        backendRes = await makeRequest(data.accessToken);
+      } else {
+        await clearTokens();
+      }
+    }
 
     const resHeaders = new Headers(backendRes.headers);
-    // Don't forward some headers
     resHeaders.delete('content-encoding');
 
-    // NOTE: Refresh token logic on 401 could go here, but for simplicity we return 401 and let client redirect or retry
     return new NextResponse(backendRes.body, {
       status: backendRes.status,
       statusText: backendRes.statusText,
