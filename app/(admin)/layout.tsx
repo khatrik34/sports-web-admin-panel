@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { LayoutDashboard, Users, Trophy, Settings, FileText, Video, Component, Shield, Tags } from 'lucide-react';
+import { LayoutDashboard, Users, Trophy, Settings, FileText, Video, Component, Shield, Tags, Image as ImageIcon, Link as LinkIcon, Home } from 'lucide-react';
 import { getSession } from '@/lib/session';
 import { redirect } from 'next/navigation';
 import { LogoutButton } from './LogoutButton';
@@ -29,6 +29,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <LayoutDashboard className="h-4 w-4" />
             Dashboard
           </Link>
+
+          {(hasPerm('homepage:read') || hasPerm('homepage:write')) && (
+            <Link href="/homepage" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
+              <Home className="h-4 w-4" />
+              Homepage Builder
+            </Link>
+          )}
           
           {(hasPerm('news:read') || hasPerm('news:write')) && (
             <>
@@ -41,6 +48,27 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                 Categories
               </Link>
             </>
+          )}
+
+          {(hasPerm('videos:read') || hasPerm('videos:write')) && (
+             <Link href="/videos" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
+               <Video className="h-4 w-4" />
+               Videos
+             </Link>
+          )}
+
+          {(hasPerm('media:read') || hasPerm('media:write')) && (
+             <Link href="/media" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
+               <ImageIcon className="h-4 w-4" />
+               Media Library
+             </Link>
+          )}
+
+          {(hasPerm('seo:read') || hasPerm('seo:write')) && (
+             <Link href="/seo" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
+               <LinkIcon className="h-4 w-4" />
+               Redirects
+             </Link>
           )}
 
           {(hasPerm('cricket:read') || hasPerm('cricket:write')) && (
@@ -64,11 +92,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             </>
           )}
 
-          <div className="px-3 py-2 text-sm font-medium rounded-md text-gray-500 cursor-not-allowed opacity-50 flex items-center gap-3" title="Phase 3">
-            <Video className="h-4 w-4" />
-            Media & Videos
-          </div>
-
           {(hasPerm('users:read') || hasPerm('users:manage') || hasPerm('roles:read')) && (
             <>
               <Link href="/users" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
@@ -90,7 +113,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           )}
         </nav>
 
-        <div className="mt-auto pt-4">
+        <div className="mt-auto pt-4 border-t">
+          <Link href="/change-password" className="w-full px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100 flex items-center gap-3 transition-colors text-left mb-2">
+            <Shield className="h-4 w-4" />
+            Change Password
+          </Link>
           <LogoutButton />
         </div>
       </aside>
@@ -98,7 +125,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <main className="flex-1 overflow-auto bg-gray-50">
         {user.mustChangePassword && (
           <div className="bg-yellow-50 p-4 border-b border-yellow-200 text-sm text-yellow-800 flex justify-center">
-            <strong>Security Notice:</strong> You must change your password. (Feature coming soon)
+            <strong>Security Notice:</strong> You must change your password.
           </div>
         )}
         {children}
