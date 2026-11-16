@@ -28,9 +28,17 @@ export async function fetchProxy(endpoint: string, options: RequestInit = {}) {
     }
     
     if (res.status === 401) {
-      // Could trigger a global sign out or redirect here
-      // window.location.href = '/login';
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
       throw new ApiError('unauthorized', 'Session expired');
+    }
+
+    if (res.status === 403 && errorData?.code === 'password_change_required') {
+      if (typeof window !== 'undefined') {
+        window.location.href = '/change-password';
+      }
+      throw new ApiError('password_change_required', 'You must change your password before continuing.');
     }
 
     if (errorData && errorData.code) {

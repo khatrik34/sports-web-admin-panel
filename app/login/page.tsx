@@ -36,9 +36,17 @@ export default function LoginPage() {
       const json = await res.json();
 
       if (!res.ok) {
-        setError(json);
+        if (res.status === 429 && json.code === 'too_many_attempts') {
+          setError({ code: 'too_many_attempts', detail: 'Too many login attempts. Please try again in a few minutes.' });
+        } else {
+          setError(json);
+        }
       } else {
-        router.push('/dashboard');
+        if (json.user?.mustChangePassword) {
+          router.push('/change-password');
+        } else {
+          router.push('/dashboard');
+        }
         router.refresh();
       }
     } catch (e) {
@@ -60,7 +68,7 @@ export default function LoginPage() {
           <div className="bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 p-3 rounded-md text-sm flex items-start gap-2 border border-red-200 dark:border-red-900/50">
             <AlertTriangle className="h-5 w-5 shrink-0" />
             <div>
-              <p className="font-semibold">{error.code}</p>
+              <p className="font-semibold">{error.code === 'too_many_attempts' ? 'Rate Limited' : error.code}</p>
               <p>{error.detail}</p>
             </div>
           </div>
