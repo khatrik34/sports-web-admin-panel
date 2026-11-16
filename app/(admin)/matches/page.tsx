@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchProxy } from '@/lib/api/client';
 import { useState } from 'react';
+import Link from 'next/link';
 
 type Match = { id: string; team1: { name: string }; team2: { name: string }; tournamentName: string; state: string; hidden: boolean };
 

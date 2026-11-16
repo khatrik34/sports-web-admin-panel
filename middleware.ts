@@ -9,7 +9,6 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check cookie
   const token = request.cookies.get('access_token')?.value;
 
   if (!token) {
@@ -19,17 +18,27 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
+  // Force change password if needed
+  if (!pathname.startsWith('/change-password') && !pathname.startsWith('/api/auth/logout')) {
+    const userDataStr = request.cookies.get('user_data')?.value;
+    if (userDataStr) {
+      try {
+        const user = JSON.parse(userDataStr);
+        if (user.mustChangePassword) {
+          // Allow proxy calls if needed? The backend api doesn't block, but panel does. Let's block UI paths.
+          if (!pathname.startsWith('/api/')) {
+            return NextResponse.redirect(new URL('/change-password', request.url));
+          }
+        }
+      } catch (e) {
+        // ignore JSON parse error
+      }
+    }
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!_next/static|_next/image|favicon.ico).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 };
