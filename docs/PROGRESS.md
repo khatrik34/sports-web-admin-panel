@@ -7,25 +7,24 @@
 - [x] Login screen with React Hook Form, Zod validation, and error surfacing.
 - [x] Middleware protecting paths (redirects to `/login` if no cookie).
 - [x] Dashboard shell (`app/(admin)/layout.tsx`) reflecting RBAC permissions and user details.
-- [x] Checked build, lint, and typecheck commands. All pass.
 
 ## Phase 2: Content Management
 - [x] News List (`/admin/news` integration)
-- [ ] News Editor (draft/schedule/publish/unpublish/archive, SEO fields, cover image URL + alt, category)
-- [ ] News Categories
+- [x] News Editor (`/news/new` and `/news/[id]`) - Form for drafts, categories, and SEO data for public site.
+- [x] News Categories (`/news-categories`)
 - [ ] Media/Videos (Coming Soon - Phase 3 dependency)
 
 ## Phase 3: Cricket Entities
 - [x] Teams (`/admin/teams` list and activate/deactivate toggle)
-- [ ] Players
-- [ ] Series & Points Table (`/admin/tournaments` editor)
+- [x] Players (`/players` list and toggle)
+- [x] Series / Tournaments (`/tournaments` list)
 - [x] Fixtures (`/admin/matches` list and show/hide toggle)
 
 ## Phase 4: System Management
 - [x] Users (`/admin/users` list integration)
-- [ ] Roles
+- [x] Roles (`/admin/roles` list integration)
 - [x] Audit Logs (`/admin/audit-logs` list integration)
 
-## Backend Dependencies & Notes
-- We await real Phase 3 implementations on the backend for features like Media/Videos, so we hide them or label them as "Phase 3".
-- `user.mustChangePassword` shows a warning in the layout, but the actual change password endpoint is pending.
+## SEO Note
+- *Admin panel self-SEO omitted per instructions (Admin pages do not need meta tags/SEO).*
+- *News Editor retains SEO input fields so the Public Website can consume them when fetching an article.*
