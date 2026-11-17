@@ -14,9 +14,14 @@ export default function UsersPage() {
   const [modalState, setModalState] = useState<{ isOpen: boolean; mode: 'add' | 'edit'; user?: User }>({ isOpen: false, mode: 'add' });
   const queryClient = useQueryClient();
 
-  const { data, isLoading, error } = useQuery({
+  const { data: usersData, isLoading, error } = useQuery({
     queryKey: ['admin-users', page],
     queryFn: () => fetchProxy(`/api/v1/admin/users?page=${page}&size=20`),
+  });
+
+  const { data: rolesData } = useQuery({
+    queryKey: ['admin-roles'],
+    queryFn: () => fetchProxy(`/api/v1/admin/roles`),
   });
 
   const { register, handleSubmit, reset } = useForm();
@@ -41,21 +46,22 @@ export default function UsersPage() {
   });
 
   const openAdd = () => {
-    reset({ email: '', password: '', displayName: '', roles: '' });
+    reset({ email: '', password: '', displayName: '', roles: [] });
     setModalState({ isOpen: true, mode: 'add' });
   };
 
   const openEdit = (user: User) => {
-    let rolesString = '';
+    let rolesArray: string[] = [];
     if (Array.isArray(user.roles)) {
-      rolesString = user.roles.map(r => typeof r === 'string' ? r : (r as {name?: string}).name || '').join(', ');
+      rolesArray = user.roles.map(r => typeof r === 'string' ? r : (r as {name?: string}).name || '');
     }
-    reset({ email: user.email, displayName: user.displayName, roles: rolesString });
+    reset({ email: user.email, displayName: user.displayName, roles: rolesArray });
     setModalState({ isOpen: true, mode: 'edit', user });
   };
 
   const onSubmit = (d: Record<string, unknown>) => {
-    const rolesArray = (d.roles as string).split(',').map(r => r.trim()).filter(Boolean);
+    // If roles is empty or undefined, ensure it's an array
+    const rolesArray = Array.isArray(d.roles) ? d.roles : (d.roles ? [d.roles] : []);
     saveMutation.mutate({ ...d, roles: rolesArray });
   };
 
@@ -83,10 +89,10 @@ export default function UsersPage() {
           <tbody className="divide-y text-gray-900">
             {isLoading ? (
               <tr><td colSpan={4} className="px-6 py-8 text-center text-gray-500">Loading...</td></tr>
-            ) : data?.content?.length === 0 ? (
+            ) : usersData?.content?.length === 0 ? (
               <tr><td colSpan={4} className="px-6 py-8 text-center text-gray-500">No users found.</td></tr>
             ) : (
-              data?.content?.map((u: User) => {
+              usersData?.content?.map((u: User) => {
                 const rolesArray = Array.isArray(u.roles) ? u.roles.map(r => typeof r === 'string' ? r : (r as {name?: string}).name || String(r)) : [];
                 return (
                   <tr key={u.id} className="hover:bg-gray-50">
@@ -129,8 +135,19 @@ export default function UsersPage() {
             <input {...register('displayName')} className="w-full border rounded-md px-3 py-2" required />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Roles (comma-separated)</label>
-            <input {...register('roles')} placeholder="e.g. ADMIN, EDITOR" className="w-full border rounded-md px-3 py-2" />
+            <label className="block text-sm font-medium mb-1">Assign Roles</label>
+            <div className="border rounded-md p-3 space-y-2 max-h-48 overflow-y-auto">
+              {Array.isArray(rolesData) && rolesData.length > 0 ? (
+                rolesData.map((role: { name: string }) => (
+                  <label key={role.name} className="flex items-center gap-2">
+                    <input type="checkbox" value={role.name} {...register('roles')} className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                    <span className="text-sm">{role.name}</span>
+                  </label>
+                ))
+              ) : (
+                <p className="text-sm text-gray-500">No roles available or loading...</p>
+              )}
+            </div>
           </div>
           <div className="pt-4 flex justify-end gap-2">
             <button type="button" onClick={() => setModalState({ ...modalState, isOpen: false })} className="px-4 py-2 border rounded-md font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
