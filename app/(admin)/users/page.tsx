@@ -46,7 +46,11 @@ export default function UsersPage() {
   };
 
   const openEdit = (user: User) => {
-    reset({ email: user.email, displayName: user.displayName, roles: user.roles?.join(', ') });
+    let rolesString = '';
+    if (Array.isArray(user.roles)) {
+      rolesString = user.roles.map(r => typeof r === 'string' ? r : (r as {name?: string}).name || '').join(', ');
+    }
+    reset({ email: user.email, displayName: user.displayName, roles: rolesString });
     setModalState({ isOpen: true, mode: 'edit', user });
   };
 
@@ -82,20 +86,23 @@ export default function UsersPage() {
             ) : data?.content?.length === 0 ? (
               <tr><td colSpan={4} className="px-6 py-8 text-center text-gray-500">No users found.</td></tr>
             ) : (
-              data?.content?.map((u: User) => (
-                <tr key={u.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">{u.email}</td>
-                  <td className="px-6 py-4">{u.displayName}</td>
-                  <td className="px-6 py-4">
-                    {u.roles?.map(r => (
-                      <span key={r} className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full mr-1">{r}</span>
-                    ))}
-                  </td>
-                  <td className="px-6 py-4">
-                    <button onClick={() => openEdit(u)} className="text-blue-600 font-medium hover:underline">Edit</button>
-                  </td>
-                </tr>
-              ))
+              data?.content?.map((u: User) => {
+                const rolesArray = Array.isArray(u.roles) ? u.roles.map(r => typeof r === 'string' ? r : (r as {name?: string}).name || String(r)) : [];
+                return (
+                  <tr key={u.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4">{u.email}</td>
+                    <td className="px-6 py-4">{u.displayName}</td>
+                    <td className="px-6 py-4">
+                      {rolesArray.map((r: string, idx: number) => (
+                        <span key={idx} className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full mr-1">{r}</span>
+                      ))}
+                    </td>
+                    <td className="px-6 py-4">
+                      <button onClick={() => openEdit(u)} className="text-blue-600 font-medium hover:underline">Edit</button>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
