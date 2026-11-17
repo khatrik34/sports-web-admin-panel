@@ -76,7 +76,7 @@ export default function UsersPage() {
         </button>
       </div>
 
-      <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
+      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
         <table className="w-full text-left text-sm whitespace-nowrap">
           <thead className="bg-gray-50 border-b">
             <tr>
